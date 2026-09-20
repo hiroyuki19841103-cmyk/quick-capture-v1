@@ -1,0 +1,1 @@
+{"name":"quick-capture-v1","private":true,"version":"1.0.0","type":"module","engines":{"node":">=20.19"},"scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},"dependencies":{"@azure/msal-browser":"^4.23.0"},"devDependencies":{"vite":"^7.1.4"}}
