@@ -1,6 +1,13 @@
 export const WORKBOOK_FILE_NAME="TASK_CONTROL_Master.xlsx";
 export const WORKBOOK_MIME="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const NS="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+export const QUICK_CAPTURE_TEMPLATE_SHEET="QUICK_CAPTURE_TEMPLATES";
+export const DEFAULT_QUICK_CAPTURE_TEMPLATES=[
+ {id:"TMP-001",sortOrder:10,name:"確認",body:"【確認】\n対象：\n確認事項：\n期限：",enabled:true,updatedAt:""},
+ {id:"TMP-002",sortOrder:20,name:"現場メモ",body:"【現場メモ】\n場所：\n事実：\n気づき：",enabled:true,updatedAt:""},
+ {id:"TMP-003",sortOrder:30,name:"思いつき",body:"【思いつき】\n内容：\n次に確認：",enabled:true,updatedAt:""},
+ {id:"TMP-004",sortOrder:40,name:"引継ぎ",body:"【引継ぎ】\n相手：\n内容：\n期限：",enabled:true,updatedAt:""}
+];
 
 function requireZip(){if(!globalThis.JSZip)throw new Error("Excel同期部品を読み込めませんでした");return globalThis.JSZip;}
 function parseXml(text,label){const doc=new DOMParser().parseFromString(text,"application/xml");if(doc.getElementsByTagName("parsererror").length)throw new Error(`${label}を解析できません`);return doc;}
@@ -23,6 +30,21 @@ function aliases(record){return new Map([
 }
 function inlineCell(doc,ref,value){const c=doc.createElementNS(NS,"c");c.setAttribute("r",ref);c.setAttribute("t","inlineStr");const is=doc.createElementNS(NS,"is"),t=doc.createElementNS(NS,"t");const text=String(value??"");if(/^\s|\s$|\n/.test(text))t.setAttributeNS("http://www.w3.org/XML/1998/namespace","xml:space","preserve");t.textContent=text;is.append(t);c.append(is);return c;}
 function updateRef(node,lastCol,lastRow){if(!node)return;const current=node.getAttribute("ref")||`A1:${lastCol}${lastRow}`;const start=current.split(":")[0]||"A1";node.setAttribute("ref",`${start}:${lastCol}${lastRow}`);}
+
+async function workbookSheetLocation(zip,sheetName){
+ const workbookFile=zip.file("xl/workbook.xml"),relsFile=zip.file("xl/_rels/workbook.xml.rels");if(!workbookFile||!relsFile)return"";
+ const workbook=parseXml(await workbookFile.async("text"),"workbook"),sheet=[...workbook.getElementsByTagNameNS("*","sheet")].find(node=>node.getAttribute("name")===sheetName);if(!sheet)return"";
+ const relationshipId=sheet.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id")||sheet.getAttribute("r:id")||"",rels=parseXml(await relsFile.async("text"),"workbook relationships"),relationship=[...rels.getElementsByTagNameNS("*","Relationship")].find(node=>node.getAttribute("Id")===relationshipId),target=relationship?.getAttribute("Target")||"";
+ return target?`xl/${target.replace(/^\/?xl\//,"").replace(/^\//,"")}`:"";
+}
+
+export async function readQuickCaptureTemplates(bytes){
+ const zip=await requireZip().loadAsync(bytes),location=await workbookSheetLocation(zip,QUICK_CAPTURE_TEMPLATE_SHEET);if(!location)return DEFAULT_QUICK_CAPTURE_TEMPLATES.map(item=>({...item}));
+ const sheetFile=zip.file(location);if(!sheetFile)return DEFAULT_QUICK_CAPTURE_TEMPLATES.map(item=>({...item}));
+ const doc=parseXml(await sheetFile.async("text"),QUICK_CAPTURE_TEMPLATE_SHEET),shared=zip.file("xl/sharedStrings.xml"),strings=sharedStrings(shared?parseXml(await shared.async("text"),"共有文字列"):null),templates=[];
+ [...doc.getElementsByTagNameNS("*","row")].filter(row=>Number(row.getAttribute("r")||0)>1).forEach(row=>{const map=rowMap(row,strings),item={id:String(map.get(0)||"").trim(),sortOrder:Number(map.get(1))||0,name:String(map.get(2)||"").trim(),body:String(map.get(3)||""),enabled:/^(TRUE|1|YES|ON)$/i.test(String(map.get(4)||"")),updatedAt:String(map.get(5)||"")};if(item.id&&item.name&&item.body&&item.enabled)templates.push(item);});
+ return templates.sort((a,b)=>a.sortOrder-b.sortOrder||a.name.localeCompare(b.name,"ja"));
+}
 
 export async function appendTaskRecord(bytes,record){
  const zip=await requireZip().loadAsync(bytes),sheetFile=zip.file("xl/worksheets/sheet1.xml");
