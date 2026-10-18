@@ -24,7 +24,7 @@ function aliases(record){return new Map([
   ["削除","FALSE"],["作成日時",record.now],["更新日時",record.now],["更新元",record.device],["版",1],
   ["想定所要時間（h）",(record.expectedMinutes||0)/60],["最小作業単位（h）",0.5],["フォロー","FALSE"],["フォロー想定時間（h）",0],
   ["想定所要時間（分）",record.expectedMinutes],["想定所要時間(分)",record.expectedMinutes],["想定所要時間",record.expectedMinutes],["ExpectedMinutes",record.expectedMinutes],
-  ["次に触る日",""],["今日への配置","自動判定"],["作業分割","分割不可"],
+  ["次に触る日",record.nextTouchDate||""],["今日への配置","自動判定"],["作業分割","分割不可"],
   ["最小作業単位（分）",30],["最小作業単位(分)",30],["MinimumBlockMinutes",30],
   ["フォロー要否","FALSE"],["フォロー担当",""],["次回フォロー日",""],["フォロー想定時間（分）",0],["フォロー内容",record.followNotes||""]
  ]);
@@ -53,6 +53,7 @@ export async function appendTaskRecord(bytes,record,related=[]){
  const doc=parseXml(await sheetFile.async("text"),"TASKSシート"),shared=zip.file("xl/sharedStrings.xml"),strings=sharedStrings(shared?parseXml(await shared.async("text"),"共有文字列"):null),rows=[...doc.getElementsByTagNameNS("*","row")];
  const headerRow=rows.find(row=>Number(row.getAttribute("r"))===1);if(!headerRow)throw new Error("Excel Masterの見出しが見つかりません");
  const headers=rowMap(headerRow,strings),headerCount=Math.max(...headers.keys())+1;
+ if(record.nextTouchDate&&![...headers.values()].some(value=>String(value).trim()==="次に触る日"))throw new Error("Excel Masterに「次に触る日」列がありません。TASK CONTROLでOneDrive同期してから再同期してください");
  if(headers.get(0)!=="TaskID")throw new Error("TASK CONTROL用のExcel Masterではありません");
  let maxOrder=0;rows.filter(row=>Number(row.getAttribute("r"))>1).forEach(row=>{const map=rowMap(row,strings),sortIndex=[...headers].find(([,v])=>v==="SortOrder")?.[0];if(sortIndex!=null)maxOrder=Math.max(maxOrder,Number(map.get(sortIndex))||0);});
  const existingIds=new Set(rows.filter(row=>Number(row.getAttribute("r"))>1).map(row=>rowMap(row,strings).get(0)));
