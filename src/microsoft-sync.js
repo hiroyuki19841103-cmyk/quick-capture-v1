@@ -10,14 +10,14 @@ async function collection(path,access){const items=[];while(path){const page=awa
 export async function syncMicrosoft(record,getToken,checkpoint,status){
  if(record.category==="外部メモ")return true;
  if(!record.todoDone){status("Microsoft To Do登録中…");const access=await getToken(["Tasks.ReadWrite"]);if(!access)return false;
-  if(!record.todoListId){const lists=await collection("/me/todo/lists",access);let list=lists.find(x=>x.displayName==="TASK CONTROL リマインダー")||lists.find(x=>x.displayName==="TASK CONTROL");if(!list)list=await graph("/me/todo/lists",access,"POST",{displayName:"TASK CONTROL"});record.todoListId=list.id;checkpoint();}
+  if(!record.todoListId){const lists=await collection("/me/todo/lists",access);let list=lists.find(x=>x.displayName==="TASK CONTROL リマインダー")||lists.find(x=>x.displayName==="TASK CONTROL");if(!list)list=await graph("/me/todo/lists",access,"POST",{displayName:"TASK CONTROL"});record.todoListId=list.id;await checkpoint();}
   const path=`/me/todo/lists/${encodeURIComponent(record.todoListId)}/tasks`;
-  if(!record.todoTaskId){const remotes=await collection(path+"?$top=100",access),remote=remotes.find(x=>String(x.body?.content||"").match(/TASK CONTROL TaskID:\s*([A-Za-z0-9-]+)/i)?.[1]===record.id);const created=remote||await graph(path,access,"POST",{title:record.title,body:todoPayload(record).body});record.todoTaskId=created.id;checkpoint();}
-  const remote=await graph(`${path}/${encodeURIComponent(record.todoTaskId)}`,access,"PATCH",todoPayload(record));record.todoDone=true;record.todoModifiedAt=remote.lastModifiedDateTime||"";record.todoWebUrl=remote.webUrl||"";checkpoint();
+  if(!record.todoTaskId){const remotes=await collection(path+"?$top=100",access),remote=remotes.find(x=>String(x.body?.content||"").match(/TASK CONTROL TaskID:\s*([A-Za-z0-9-]+)/i)?.[1]===record.id);const created=remote||await graph(path,access,"POST",{title:record.title,body:todoPayload(record).body});record.todoTaskId=created.id;await checkpoint();}
+  const remote=await graph(`${path}/${encodeURIComponent(record.todoTaskId)}`,access,"PATCH",todoPayload(record));record.todoDone=true;record.todoModifiedAt=remote.lastModifiedDateTime||"";record.todoWebUrl=remote.webUrl||"";await checkpoint();
  }
  if(record.calendarEnabled&&!record.calendarDone){status("Outlook予定登録中…");const access=await getToken(["Calendars.ReadWrite"]);if(!access)return false;
-  if(!record.calendarEventId){const remote=await graph("/me/calendar/events",access,"POST",calendarPayload(record));record.calendarEventId=remote.id;record.calendarWebLink=remote.webLink||"";checkpoint();}
-  record.calendarDone=true;checkpoint();
+  if(!record.calendarEventId){const remote=await graph("/me/calendar/events",access,"POST",calendarPayload(record));record.calendarEventId=remote.id;record.calendarWebLink=remote.webLink||"";await checkpoint();}
+  record.calendarDone=true;await checkpoint();
  }
  return true;
 }
