@@ -1,5 +1,6 @@
 window.QUICK_CAPTURE_CONFIG=Object.freeze({
- APP_VERSION:"2026.11.25-v1.6.1",
+ APP_VERSION:"2026.11.27-v2.0",
+ NOLTY_CLIENT_ID:"d3b2320f-52f9-40a1-b2d7-7ae1707994b5",
  CLIENT_ID:"421c060c-f769-4d5b-9bab-8c3b9a4cf3ec",
  AUTHORITY:"https://login.microsoftonline.com/common/",
  REDIRECT_URI:"https://black-pond-0a1e56410.2.azurestaticapps.net/",

@@ -89,3 +89,18 @@ button:disabled{opacity:.55}select,input,textarea,.task-fields>label{min-width:0
 .queue-row{display:grid;gap:5px;padding:10px;border-bottom:1px solid #5f758859;overflow-wrap:anywhere}
 .queue-row small{color:#9db2c3;font-size:.72rem}
 @media(max-height:650px){.choice{min-height:auto}}
+.connection-bar{flex-wrap:wrap}
+.choice{min-height:auto;padding:18px 0;gap:12px}
+.choice button{min-height:135px;padding:14px 8px;gap:6px}
+.choice .mode-icon{width:48px;height:48px;font-size:1.5rem;border-radius:14px;border-width:2px}
+.choice b{font-size:1.1rem;text-align:center}
+.choice small{text-align:center}
+.nolty-fields{display:grid;gap:14px}
+.nolty-fields fieldset{margin:0;padding:12px;border:1px solid #5f758859;border-radius:11px}
+.nolty-fields legend{color:#a9bdcb;font-size:.76rem;font-weight:800;padding:0 5px}
+.nolty-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nolty-options label{display:flex;flex-direction:row;align-items:center;justify-content:center;min-height:44px;border:1px solid #5f758859;border-radius:9px;font-size:.95rem;color:#eef6fb}
+.nolty-options input{width:18px;height:18px;accent-color:#31a8d1}
+.nolty-options label:has(input:checked){background:#173e52;border-color:#43c5dc}
+.nolty-fields .integration-guide{margin:0}
+@media(min-width:700px){.choice{grid-template-columns:repeat(3,minmax(0,1fr))}.choice button{min-height:200px}}
